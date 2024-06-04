@@ -36,7 +36,7 @@ public class TestMainActivity extends AppCompatActivity {
         setButtonHandlers();
         enableButtons(false);
 
-        audioConverter = new AudioConverter();
+//        audioConverter = new AudioConverter();
 
         int bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,
                 RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
@@ -105,8 +105,7 @@ public class TestMainActivity extends AppCompatActivity {
 
     private void writeAudioDataToFile() {
         // Write the output audio in byte
-
-        String filePath = getFilesDir()+"/test_music_haha/vcl1.pcm";
+        String filePath = getFilesDir()+"/test_music_haha/vcl1.wav";
         String fileDir=getFilesDir()+"/test_music_haha";
         File file=new File(fileDir);
         if (!file.exists()){

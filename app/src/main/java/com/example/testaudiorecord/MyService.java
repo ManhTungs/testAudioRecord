@@ -25,6 +25,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -130,7 +131,7 @@ public class MyService extends Service {
             }
             recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                     SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, BUFFER_SIZE);
+                    AudioFormat.ENCODING_PCM_16BIT, 512);
 
 
             File musicDir= null;
@@ -145,7 +146,7 @@ public class MyService extends Service {
             }
 
 
-            audioFile = new File(audioDir, "audiorecordtest123.mp3");
+            audioFile = new File(audioDir, "audiorecordtest77.wav");
 
             recorder.startRecording();
             isRecording = true;
@@ -229,4 +230,6 @@ public class MyService extends Service {
         return bytes;
 
     }
+
+
 }
