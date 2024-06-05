@@ -2,6 +2,7 @@ package com.example.testaudiorecord;
 
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -26,7 +27,6 @@ public class TestMainActivity extends AppCompatActivity {
     private Thread recordingThread = null;
     private boolean isRecording = false;
     AudioConverter audioConverter;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

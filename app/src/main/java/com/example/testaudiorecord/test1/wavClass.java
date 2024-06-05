@@ -3,9 +3,12 @@ package com.example.testaudiorecord.test1;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
+import android.media.AudioPlaybackCaptureConfiguration;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.media.projection.MediaProjection;
 import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
@@ -26,6 +29,7 @@ public class wavClass {
     int bufferSize = 0;
     Thread recordingThread;
     boolean isRecording = false;
+    MediaProjection mediaProjection;
     Context context;
 
     public wavClass(String path, Context context) {
