@@ -20,7 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.testaudiorecord.R;
 
 public class MainActivity3 extends AppCompatActivity {
-    Button btnStart,btnStop,btnPause,btnResume,btnReplay,btnMerge;
+    Button btnStart,btnStop,btnPause,btnResume,btnReplay,btnMerge,btnConvert,btnWAV,btnMergeWavMp4;
 
 
     ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
@@ -51,6 +51,11 @@ public class MainActivity3 extends AppCompatActivity {
 
         btnReplay=findViewById(R.id.btn_replay);
         btnMerge=findViewById(R.id.btn_merge);
+        btnConvert=findViewById(R.id.btn_convert);
+        btnWAV=findViewById(R.id.btn_play_wav);
+        btnMergeWavMp4=findViewById(R.id.btn_wav_mp4);
+
+
         btnStart.setOnClickListener(v -> {
             requestScreenRecord();
         });
@@ -85,7 +90,23 @@ public class MainActivity3 extends AppCompatActivity {
             startService(intent);
         });
 
+        btnConvert.setOnClickListener(v -> {
+            Intent intent=new Intent(this, Service3.class);
+            intent.setAction("WAV");
+            startService(intent);
+        });
 
+        btnWAV.setOnClickListener(v -> {
+            Intent intent=new Intent(this, Service3.class);
+            intent.setAction("PLAY_WAV");
+            startService(intent);
+        });
+
+        btnMergeWavMp4.setOnClickListener(v -> {
+            Intent intent=new Intent(this, Service3.class);
+            intent.setAction("WAV_MP4");
+            startService(intent);
+        });
     }
 
 

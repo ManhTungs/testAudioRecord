@@ -39,4 +39,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Replay" />
+
+    <Button
+        android:id="@+id/btn_convert"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Convert" />
+
+    <Button
+        android:id="@+id/btn_play_wav"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Play WAV" />
+
+    <Button
+        android:id="@+id/btn_wav_mp4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Merge Wav mp4" />
 </LinearLayout>
