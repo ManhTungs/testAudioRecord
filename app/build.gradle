@@ -48,4 +48,6 @@ dependencies {
 
     implementation 'com.github.naman14:TAndroidLame:1.1'
 
+
+    implementation 'com.arthenica:ffmpeg-kit-full:6.0-2'
 }

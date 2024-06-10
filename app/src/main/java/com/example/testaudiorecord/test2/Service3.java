@@ -35,6 +35,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.ReturnCode;
 import com.example.testaudiorecord.R;
 
 import java.io.File;
@@ -50,11 +52,12 @@ public class Service3 extends Service {
     String pathPlayBack = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getPath() + "/test_music_haha/audioPlayback.pcm";
     String pathMic = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getPath() + "/test_music_haha/audioMic.pcm";
     String pathMerge = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getPath() + "/test_music_haha/audioMerge.pcm";
+    String pathAacMerge = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getPath() + "/test_music_haha/audioMerge.aac";
+
     String pathWav = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getPath() + "/test_music_haha/audioMerge.wav";
     String pathMp3 = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath() + "/sample-6s.mp3";
-
     String pathVideo = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getPath() + "/EZRecorder/SD2024-05-30-16-18-51.mp4";
-    String pathResult = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getPath() + "/EZRecorder/hiuhiuuuu.mp4";
+    String pathResult = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getPath() + "/EZRecorder/hiuhiuuuu1234.mp4";
 
     public static final String CHANNEL_ID = "record_channel";
     private static CharSequence CHANNEL_NAME = "record_channel_name";
@@ -70,9 +73,8 @@ public class Service3 extends Service {
     private boolean isPaused = false;
     private File audioFilePlayback, audioFileMic;
 
-    private Thread recordingThread;
-
     private MediaProjection mediaProjection;
+    private Thread recordingThread;
     AudioPlaybackCaptureConfiguration config;
     private int mResultCode;
     private Intent mResultData;
@@ -120,26 +122,43 @@ public class Service3 extends Service {
                     playAudio();
                     break;
                 case "MERGE":
-                    mergeAudio(1.0f,0.1f);
+                    mergeAudio(1.0f,0.5f);
                     break;
                 case "WAV":
-//                    createWavFile(pathMerge,pathWav);
+                    createWavFile(pathMerge,pathWav);
                     createWavFile(pathMerge,getFilesDir()+"/hahaha123.wav");
                     break;
                 case "PLAY_WAV":
                    playWavFile(pathWav);
                     break;
                 case "WAV_MP4":
-                    try {
-                        muxWavAndMp4(pathMp3,pathVideo,pathResult);
-                    } catch (IOException e) {
-                        Log.e("dfdf", "onStartCommand: ",e );
-                    }
+                    combineMedia();
+                    break;
+
+                case "PCM_MP4":
+                    convertAndCombineMedia();
                     break;
             }
         }
 
         return START_STICKY;
+    }
+
+    private void combineMedia() {
+        String ffmpegCommand = "-i " + pathVideo + " -i " + pathWav + " -c:v copy -c:a aac -strict experimental " + pathResult;
+
+        FFmpegKit.executeAsync(ffmpegCommand,session -> {
+//            ReturnCode returnCode=session.getReturnCode();
+
+            Log.e("dfdf", "combineMedia: "+session );
+            if (ReturnCode.isSuccess(session.getReturnCode())) {
+                Log.e("dfdf", "Success: Media combined successfully.");
+            } else if (ReturnCode.isCancel(session.getReturnCode())) {
+                Log.e("dfdf", "Cancelled: Operation cancelled.");
+            } else {
+                Log.e("dfdf", String.format("Command failed with state %s and rc %s.%s", session.getState(), session.getReturnCode(), session.getFailStackTrace()));
+            }
+        });
     }
 
     private void playWavFile(String filePath) {
@@ -357,6 +376,8 @@ public class Service3 extends Service {
                         Log.e("dfdf", "writeAudioDataToFile: error write fails");
                     }
                 }
+            }else {
+                Log.e("dfdf", "writeAudioDataToFile: not pause " );
             }
         }
 
@@ -366,6 +387,7 @@ public class Service3 extends Service {
                 osMic.close();
             }
         } catch (IOException e) {
+            Log.e("dfdf", "writeAudioDataToFile: ",e );
             e.printStackTrace();
         }
 
@@ -377,11 +399,11 @@ public class Service3 extends Service {
             recorderPlayback.stop();
             recorderPlayback.release();
             recorderPlayback = null;
-            isRecording = false;
             recordMic.stop();
             recordMic.release();
             recordMic = null;
             recordingThread = null;
+            mediaProjection.stop();
         }
 
 
@@ -405,78 +427,8 @@ public class Service3 extends Service {
         }, handler);
     }
 
-//    public void mergeAudio()throws IOException{
-//
-//
-//        FileInputStream micInputStream = new FileInputStream(pathMic);
-//        FileInputStream playbackInputStream = new FileInputStream(pathPlayBack);
-//        FileOutputStream mergedOutputStream = new FileOutputStream(pathMerge);
-//
-//        byte[] micBuffer = new byte[1024];
-//        byte[] playbackBuffer = new byte[1024];
-//        byte[] mergedBuffer = new byte[1024];
-//
-//        int bytesReadMic;
-//        int bytesReadPlayback;
-//
-//        // Đọc từng mẫu âm thanh từ cả hai file và gộp lại
-//        while ((bytesReadMic = micInputStream.read(micBuffer)) != -1 &&
-//                (bytesReadPlayback = playbackInputStream.read(playbackBuffer)) != -1) {
-//            for (int i = 0; i < bytesReadMic; i++) {
-//                // Lấy giá trị trung bình của mẫu âm thanh từ hai file
-//                mergedBuffer[i] = (byte) ((micBuffer[i] + playbackBuffer[i]) / 2);
-//            }
-//            // Ghi dữ liệu gộp vào file mới
-//            mergedOutputStream.write(mergedBuffer, 0, bytesReadMic);
-//        }
-//
-//        micInputStream.close();
-//        playbackInputStream.close();
-//        mergedOutputStream.close();
-//    }
 
     private void mergeAudio(float micVolume, float playbackVolume) {
-//        File file1 = new File(pathMic);
-//        File file2 = new File(pathPlayBack);
-//        File outputFile = new File(pathMerge);
-//
-//        try (FileInputStream fis1 = new FileInputStream(file1);
-//             FileInputStream fis2 = new FileInputStream(file2);
-//             FileOutputStream fos = new FileOutputStream(outputFile)) {
-//
-//            byte[] buffer1 = new byte[1024];
-//            byte[] buffer2 = new byte[1024];
-//            int read1, read2 = 0;
-//
-//            while ((read1 = fis1.read(buffer1)) > 0 && (read2 = fis2.read(buffer2)) > 0) {
-//                byte[] mixedBuffer = new byte[read1];
-//                for (int i = 0; i < read1; i += 2) {
-//                    short sample1 = (short) ((buffer1[i] & 0xFF) | (buffer1[i + 1] << 8));
-//                    short sample2 = (short) ((buffer2[i] & 0xFF) | (buffer2[i + 1] << 8));
-//                    short mixedSample = (short) Math.min(Math.max(sample1 + sample2, Short.MIN_VALUE), Short.MAX_VALUE);
-//                    mixedBuffer[i] = (byte) (mixedSample & 0xFF);
-//                    mixedBuffer[i + 1] = (byte) ((mixedSample >> 8) & 0xFF);
-//                }
-//                fos.write(mixedBuffer, 0, read1);
-//            }
-//
-//            // Nếu một trong hai tệp vẫn còn dữ liệu
-//            if (read1 > 0) {
-//                fos.write(buffer1, 0, read1);
-//                while ((read1 = fis1.read(buffer1)) > 0) {
-//                    fos.write(buffer1, 0, read1);
-//                }
-//            } else if (read2 > 0) {
-//                fos.write(buffer2, 0, read2);
-//                while ((read2 = fis2.read(buffer2)) > 0) {
-//                    fos.write(buffer2, 0, read2);
-//                }
-//            }
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
         File file1 = new File(pathMic);
         File file2 = new File(pathPlayBack);
         File outputFile = new File(pathMerge);
@@ -529,8 +481,8 @@ public class Service3 extends Service {
             FileInputStream fileInputStream = new FileInputStream(tempPath);
             FileOutputStream fileOutputStream = new FileOutputStream(wavPath);
             byte[] data = new byte[BUFFER_SIZE_CONVERT];
-            int channels = 2;
-            long byteRate = (long) bpp * sampleRate * channels / 8;
+            int channels = 1;
+            long byteRate = (long) bpp  * channels / 8;
             long totalAudioLen = fileInputStream.getChannel().size();
             long totalDataLen = totalAudioLen + 36;
             wavHeader(fileOutputStream, totalAudioLen, totalDataLen, channels, byteRate);
@@ -598,93 +550,33 @@ public class Service3 extends Service {
         }
 
     }
-    public void muxWavAndMp4(String wavFilePath, String mp4FilePath, String outputFilePath) throws IOException {
-        MediaMuxer mediaMuxer = new MediaMuxer(outputFilePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 
-        MediaExtractor videoExtractor = new MediaExtractor();
-        int videoTrackIndex = selectTrack(videoExtractor, "video/");
-
-        MediaExtractor audioExtractor = new MediaExtractor();
-        int audioTrackIndex=selectTrack(audioExtractor,"audio/wav");
-        MediaFormat audioFormat = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            audioFormat = new MediaFormat(audioExtractor.getTrackFormat(audioTrackIndex));
-            MediaFormat videoFormat = new MediaFormat(videoExtractor.getTrackFormat(videoTrackIndex));
-
-        }
-//        int audioTrackIndex = mediaMuxer.addTrack(audioFormat);
-//        int videoTrackIndex = mediaMuxer.addTrack(videoFormat);
-
-        // Setup Metadata Track
-//        MediaFormat metadataFormat = new MediaFormat(...);
-//        metadataFormat.setString(KEY_MIME, "application/gyro");
-//        int metadataTrackIndex = mediaMuxer.addTrack(metadataFormat);
-
-//        MediaExtractor videoExtractor = new MediaExtractor();
-//        videoExtractor.setDataSource(mp4FilePath);
-//        int videoTrackIndex = selectTrack(videoExtractor, "video/");
-//        MediaFormat videoFormat = videoExtractor.getTrackFormat(videoTrackIndex);
-//
-//        MediaExtractor audioExtractor = new MediaExtractor();
-//        audioExtractor.setDataSource(wavFilePath);
-//        int audioTrackIndex = selectTrack(audioExtractor, "audio/");
-//        MediaFormat audioFormat = audioExtractor.getTrackFormat(audioTrackIndex);
-//
-//        MediaMuxer mediaMuxer = new MediaMuxer(outputFilePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-//        int muxerVideoTrackIndex = mediaMuxer.addTrack(videoFormat);
-//        int muxerAudioTrackIndex = mediaMuxer.addTrack(audioFormat);
-//
-//        mediaMuxer.start();
-//
-//        // Write video data
-//        videoExtractor.selectTrack(videoTrackIndex);
-//        ByteBuffer videoBuffer = ByteBuffer.allocate(1024 * 1024);
-//        MediaCodec.BufferInfo videoBufferInfo = new MediaCodec.BufferInfo();
-//        while (true) {
-//            int sampleSize = videoExtractor.readSampleData(videoBuffer, 0);
-//            if (sampleSize < 0) {
-//                break;
-//            }
-//            videoBufferInfo.offset = 0;
-//            videoBufferInfo.size = sampleSize;
-//            videoBufferInfo.presentationTimeUs = videoExtractor.getSampleTime();
-//            videoBufferInfo.flags = videoExtractor.getSampleFlags();
-//            mediaMuxer.writeSampleData(muxerVideoTrackIndex, videoBuffer, videoBufferInfo);
-//            videoExtractor.advance();
-//        }
-//
-//        // Write audio data
-//        audioExtractor.selectTrack(audioTrackIndex);
-//        ByteBuffer audioBuffer = ByteBuffer.allocate(1024 * 1024);
-//        MediaCodec.BufferInfo audioBufferInfo = new MediaCodec.BufferInfo();
-//        while (true) {
-//            int sampleSize = audioExtractor.readSampleData(audioBuffer, 0);
-//            if (sampleSize < 0) {
-//                break;
-//            }
-//            audioBufferInfo.offset = 0;
-//            audioBufferInfo.size = sampleSize;
-//            audioBufferInfo.presentationTimeUs = audioExtractor.getSampleTime();
-//            audioBufferInfo.flags = audioExtractor.getSampleFlags();
-//            mediaMuxer.writeSampleData(muxerAudioTrackIndex, audioBuffer, audioBufferInfo);
-//            audioExtractor.advance();
-//        }
-//
-//        mediaMuxer.stop();
-//        mediaMuxer.release();
-//        videoExtractor.release();
-//        audioExtractor.release();
+    private void convertAndCombineMedia() {
+        String convertCommand = "-f s16le -ar 22050 -ac 2 -i " + pathMerge + " -c:a aac " + pathAacMerge;
+        FFmpegKit.executeAsync(convertCommand, session -> {
+            ReturnCode returnCode = session.getReturnCode();
+            if (ReturnCode.isSuccess(returnCode)) {
+                Log.e("dfdf", "Success: PCM to AAC conversion completed.");
+                // Kết hợp audio AAC và video MP4
+                combineAudioAndVideo(pathVideo, pathAacMerge,pathResult);
+            } else {
+                Log.e("dfdf", "Error converting PCM to AAC: " + session.getFailStackTrace());
+            }
+        });
     }
 
-    private int selectTrack(MediaExtractor extractor, String mimePrefix) {
-        for (int i = 0; i < extractor.getTrackCount(); i++) {
-            MediaFormat format = extractor.getTrackFormat(i);
-            String mime = format.getString(MediaFormat.KEY_MIME);
-            if (mime.startsWith(mimePrefix)) {
-                return i;
+    private void combineAudioAndVideo(String inputVideoPath, String inputAudioPath, String outputPath) {
+        String combineCommand = "-i " + inputVideoPath + " -i " + inputAudioPath + " -c:v copy -c:a aac -strict experimental " + outputPath;
+        FFmpegKit.executeAsync(combineCommand, session -> {
+            ReturnCode returnCode = session.getReturnCode();
+            if (ReturnCode.isSuccess(returnCode)) {
+                Log.e("dfdf", "Success: Media combined successfully.");
+            } else if (ReturnCode.isCancel(returnCode)) {
+                Log.e("dfdf", "Cancelled: Operation cancelled.");
+            } else {
+                Log.e("dfdf", "Error combining media: " + session.getFailStackTrace());
             }
-        }
-        return -1;
+        });
     }
 
 }
